@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  postReader lambda
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 5
+
+Resources:
+  GetPostFunc:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: getPostUri/
+      Handler: getPostApp
+      Runtime: go1.x
+      Tracing: Active # https://docs.aws.amazon.com/lambda/latest/dg/lambda-x-ray.html
+      Events:
+        CatchAll:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /
+            Method: GET
+      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+        Variables:
+          POSTS_TABLE: posts
+      Role: arn:aws:iam::019907068212:role/GoPost5-GetPostFunctionRole-G3XD5TOBM55K    
+  NewPostFunc:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: newPostUri/
+      Handler: newPostApp
+      Runtime: go1.x
+      Tracing: Active # https://docs.aws.amazon.com/lambda/latest/dg/lambda-x-ray.html
+      Events:
+        CatchAll:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /
+            Method: POST
+      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+        Variables:
+          POSTS_TABLE: posts
+          SNS_TOPIC: arn:aws:sns:ap-southeast-1:019907068212:postReader
+      Role: arn:aws:iam::019907068212:role/GoPost5-GetPostFunctionRole-G3XD5TOBM55K
+  ConvertPostFunc:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: convertPostUri/
+      Handler: convertPostApp
+      Runtime: go1.x
+      Tracing: Active # https://docs.aws.amazon.com/lambda/latest/dg/lambda-x-ray.html
+      Events:
+        Mytriggers:
+          Type: SNS
+          Properties:
+            Topic: arn:aws:sns:ap-southeast-1:019907068212:postReader
+            #SqsSubscription: true
+      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+        Variables:
+          POSTS_TABLE: posts
+          SNS_TOPIC: arn:aws:sns:ap-southeast-1:019907068212:postReader
+      Role: arn:aws:iam::019907068212:role/GoPost-ConvertPost-ConvertPostFunctionRole-5ZO5ZUPR8MQD
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  GetPostAPI:
+    Description: "API Gateway endpoint URL for Prod environment for First Function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/getPost/"
+  GetPostFunc:
+    Description: "First Lambda Function ARN"
+    Value: !GetAtt GetPostFunc.Arn
+  NewPostAPI:
+    Description: "API Gateway endpoint URL for Prod environment for Post Function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/newPost/"
+  NewPostFunc:
+    Description: "First Lambda Function ARN"
+    Value: !GetAtt NewPostFunc.Arn
+
+  # GetPostFuncIamRole:
+  #   Description: "Implicit IAM Role created for Hello World function"
+  #   Value: !GetAtt GetPostFuncRole.Arn
+  
+  
+  #NewPostFuncIamRole:
+  #  Description: "Implicit IAM Role created for Hello World function"
+  #  Value: !GetAtt NewPostFuncIamRole.Arn

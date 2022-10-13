@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'postReader lambda
+
+  '
+Globals:
+  Function:
+    Timeout: 5
+Resources:
+  GetPostFunc:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://jackpollywebsite4/8289eba37831cb08e80f67af21f09ebb
+      Handler: getPostApp
+      Runtime: go1.x
+      Tracing: Active
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /getPost
+            Method: GET
+      Environment:
+        Variables:
+          POSTS_TABLE: posts
+      Role: arn:aws:iam::019907068212:role/GoPost5-GetPostFunctionRole-G3XD5TOBM55K
+  NewPostFunc:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://jackpollywebsite4/9c49763607b654bcc754f783699f2a22
+      Handler: newPostApp
+      Runtime: go1.x
+      Tracing: Active
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            Path: /newPost
+            Method: POST
+      Environment:
+        Variables:
+          POSTS_TABLE: posts
+          SNS_TOPIC: arn:aws:sns:ap-southeast-1:019907068212:postReader
+      Role: arn:aws:iam::019907068212:role/GoPost5-GetPostFunctionRole-G3XD5TOBM55K
+  ConvertPostFunc:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://jackpollywebsite4/529e5278923ab1c1c66e581cc4414962
+      Handler: convertPostApp
+      Runtime: go1.x
+      Tracing: Active
+      Events:
+        Mytriggers:
+          Type: SNS
+          Properties:
+            Topic: arn:aws:sns:ap-southeast-1:019907068212:postReader
+      Environment:
+        Variables:
+          POSTS_TABLE: posts
+          SNS_TOPIC: arn:aws:sns:ap-southeast-1:019907068212:postReader
+      Role: arn:aws:iam::019907068212:role/GoPost-ConvertPost-ConvertPostFunctionRole-5ZO5ZUPR8MQD
+Outputs:
+  GetPostAPI:
+    Description: API Gateway endpoint URL for Prod environment for First Function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/getPost/
+  GetPostFunc:
+    Description: First Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - GetPostFunc
+      - Arn
+  NewPostAPI:
+    Description: API Gateway endpoint URL for Prod environment for Post Function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/newPost/
+  NewPostFunc:
+    Description: First Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - NewPostFunc
+      - Arn
